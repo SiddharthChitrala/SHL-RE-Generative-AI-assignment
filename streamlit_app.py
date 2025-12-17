@@ -3,6 +3,9 @@ import requests
 import pandas as pd
 from typing import List, Dict
 
+# Live backend URL (Render)
+API_URL = "https://shl-re-generative-ai-assignment.onrender.com"
+
 
 # --------------------------------------------------
 # Page Configuration
@@ -22,43 +25,67 @@ st.set_page_config(
 st.markdown(
     """
     <style>
+        :root{
+            --accent:#2563EB; /* stronger blue */
+            --accent-dark:#1E40AF;
+            --text:#0F172A; /* primary text */
+            --muted:#475569; /* secondary text */
+            --bg:#F8FAFC;
+            --card:#FFFFFF;
+            --card-border:rgba(2,6,23,0.06);
+            --card-hover:rgba(59,130,246,0.04);
+            --success:#10B981;
+            --purple:#8B5CF6;
+            --amber:#F59E0B;
+            --btn-hover:rgba(37,99,235,0.12);
+        }
+        .stApp { background: var(--bg); }
+        .container { max-width:1100px; margin:0 auto; padding:2rem 1rem; }
         .main-header {
-            font-size: 2.5rem;
-            color: #1E3A8A;
+            font-size: 2.25rem;
+            color: var(--accent);
             text-align: center;
-            margin-bottom: 2rem;
+            margin: 0 0 0.25rem 0;
+            font-weight:700;
         }
         .sub-header {
-            font-size: 1.5rem;
-            color: #374151;
-            margin-top: 1.5rem;
+            font-size: 1rem;
+            color: var(--muted);
+            text-align:center;
+            margin-bottom: 1.5rem;
         }
         .recommendation-card {
-            background-color: #F3F4F6;
-            padding: 1.5rem;
+            background-color: var(--card);
+            padding: 1rem;
             border-radius: 10px;
             margin-bottom: 1rem;
-            border-left: 5px solid #3B82F6;
+            box-shadow: 0 6px 18px rgba(15,23,42,0.04);
+            border: 1px solid var(--card-border);
+            transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
         }
-        .test-type-badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 15px;
-            font-size: 0.8rem;
-            margin-right: 0.5rem;
-            margin-bottom: 0.5rem;
+        .recommendation-card:hover{ transform: translateY(-6px); box-shadow: 0 18px 40px rgba(2,6,23,0.08); border-color: var(--card-hover); }
+        .recommendation-card.clean .card-head {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:1rem;
+            margin-bottom:0.5rem;
         }
-        .duration-badge {
-            background-color: #10B981;
-            color: white;
-        }
-        .adaptive-badge {
-            background-color: #8B5CF6;
-            color: white;
-        }
-        .remote-badge {
-            background-color: #F59E0B;
-            color: white;
+        .recommendation-card .title { font-size:1.02rem; font-weight:700; color:var(--text); }
+        .recommendation-card .score { width:140px; background:#E6E9EE; height:8px; border-radius:8px; overflow:hidden; }
+        .recommendation-card .score .bar { height:100%; background:linear-gradient(90deg,var(--success), #06b87d); }
+        .recommendation-card .score-text { font-size:0.85rem; color:var(--muted); margin-left:0.5rem; }
+        .recommendation-card .desc { color:var(--muted); margin-bottom:0.75rem; font-size:0.95rem; }
+        .chip { display:inline-block; background:#F1F5F9; padding:0.25rem 0.6rem; border-radius:999px; font-size:0.8rem; margin-right:0.5rem; color:var(--text); }
+        .chip.success { background:var(--success); color:white; }
+        .chip.purple { background:var(--purple); color:white; }
+        .chip.amber { background:var(--amber); color:white; }
+        .actions .btn { background:var(--accent); color:white; padding:0.46rem 0.9rem; border-radius:8px; text-decoration:none; font-weight:700; display:inline-block; }
+        .actions .btn:hover{ background:var(--accent-dark); box-shadow: 0 6px 18px rgba(37,99,235,0.12); }
+        .low { opacity:0.7; }
+        .footer { text-align:center; color:var(--muted); margin-top:2rem; font-size:0.9rem; }
+        @media (min-width:1000px){
+            .card-grid { display:grid; grid-template-columns: repeat(2,1fr); gap:1rem; }
         }
     </style>
     """,
@@ -71,14 +98,10 @@ st.markdown(
 # --------------------------------------------------
 
 st.markdown(
-    '<h1 class="main-header">🎯 SHL Assessment Recommendation System</h1>',
-    unsafe_allow_html=True
-)
-
-st.markdown(
     """
-    <div style="text-align: center; color: #6B7280; margin-bottom: 2rem;">
-        AI-powered assessment recommendations for hiring managers and recruiters
+    <div class="container">
+      <h1 class="main-header">🎯 SHL Assessment Recommendation System</h1>
+      <div class="sub-header">AI-powered assessment recommendations for hiring managers and recruiters</div>
     </div>
     """,
     unsafe_allow_html=True
@@ -95,7 +118,7 @@ with st.sidebar:
     # Backend API URL
     api_url = st.text_input(
         "API Base URL",
-        value="http://localhost:8000",
+        value=API_URL,
         help="FastAPI backend URL"
     )
 
@@ -238,6 +261,7 @@ if st.button("🚀 Get Recommendations", type="primary", use_container_width=Tru
                         low_recs = [r for r in recommendations if r.get('low_relevance')]
 
                         # Display high relevance items first
+                        st.markdown('<div class="card-grid">', unsafe_allow_html=True)
                         for idx, rec in enumerate(high_recs, start=1):
                             types = rec.get('test_type', [])
                             if isinstance(types, str):
@@ -248,46 +272,32 @@ if st.button("🚀 Get Recommendations", type="primary", use_container_width=Tru
 
                             st.markdown(
                                 f"""
-                                <div class="recommendation-card" style="opacity: 1.0;">
-                                    <div style="display:flex;justify-content:space-between;align-items:center;">
-                                        <h3 style="margin:0">{idx}. {rec['name']}</h3>
-                                        <div style="text-align:right;color:#6B7280;font-size:0.9rem;">
-                                            <div style="font-weight:600">Relevance</div>
-                                            <div style="width:120px;background:#E5E7EB;border-radius:6px;overflow:hidden;">
-                                                <div style="width:{bar_width}%;background:#10B981;height:8px;"></div>
+                                    <div class="recommendation-card clean">
+                                        <div class="card-head">
+                                            <div class="title">{idx}. {rec['name']}</div>
+                                            <div style="display:flex;align-items:center;gap:0.5rem;">
+                                                <div class="score"><div class="bar" style="width:{bar_width}%"></div></div>
+                                                <div class="score-text">{score_text}</div>
                                             </div>
-                                            <div style="font-size:0.8rem">{score_text}</div>
                                         </div>
-                                    </div>
 
-                                    <p style="margin-top:0.5rem;color:#374151">{rec.get('description','')}</p>
+                                        <div class="desc">{rec.get('description','')}</div>
 
-                                    <div style="margin-bottom: 1rem;">
-                                        <span class="test-type-badge duration-badge">
-                                            ⏱️ {rec.get('duration', '')} min
-                                        </span>
-                                        <span class="test-type-badge adaptive-badge">
-                                            🔄 {rec.get('adaptive_support', '')}
-                                        </span>
-                                        <span class="test-type-badge remote-badge">
-                                            🌐 {rec.get('remote_support', '')}
-                                        </span>
-                                    </div>
+                                        <div class="meta">
+                                            <span class="chip">⏱ {rec.get('duration','')} min</span>
+                                            <span class="chip">🔄 {rec.get('adaptive_support','')}</span>
+                                            <span class="chip">🌐 {rec.get('remote_support','')}</span>
+                                        </div>
 
-                                    <strong>Test Types:</strong><br>
-                                    {', '.join(types)}<br><br>
+                                        <div style="margin-top:0.5rem;color:#475569;font-size:0.9rem;">{', '.join(types)}</div>
 
-                                    <a href="{rec.get('url','')}" target="_blank"
-                                       style="background-color:#3B82F6;color:white;
-                                              padding:0.5rem 1rem;border-radius:5px;
-                                              text-decoration:none;">
-                                        View Assessment →
-                                    </a>
-                                </div>
-                                """,
-                                unsafe_allow_html=True
-                            )
-
+                                        <div class="actions" style="margin-top:0.75rem;">
+                                            <a href="{rec.get('url','')}" target="_blank" class="btn">View Assessment →</a>
+                                        </div>
+                                    """,
+                                    unsafe_allow_html=True
+                                )
+                        st.markdown('</div>', unsafe_allow_html=True)
                         # Low relevance items in a collapsed section to reduce noise
                         if low_recs:
                             with st.expander(f"Low relevance results ({len(low_recs)}) — Show / Hide"):
@@ -301,41 +311,28 @@ if st.button("🚀 Get Recommendations", type="primary", use_container_width=Tru
 
                                     st.markdown(
                                         f"""
-                                        <div class="recommendation-card" style="opacity: 0.6;">
-                                            <div style="display:flex;justify-content:space-between;align-items:center;">
-                                                <h4 style="margin:0">{idx_off}. {rec['name']}</h4>
-                                                <div style="text-align:right;color:#6B7280;font-size:0.85rem;">
-                                                    <div style="font-weight:600">Relevance</div>
-                                                    <div style="width:120px;background:#E5E7EB;border-radius:6px;overflow:hidden;">
-                                                        <div style="width:{bar_width}%;background:#10B981;height:8px;"></div>
-                                                    </div>
-                                                    <div style="font-size:0.8rem">{score_text}</div>
+                                        <div class="recommendation-card clean low">
+                                            <div class="card-head">
+                                                <div class="title">{idx_off}. {rec['name']}</div>
+                                                <div style="display:flex;align-items:center;gap:0.5rem;">
+                                                    <div class="score"><div class="bar" style="width:{bar_width}%"></div></div>
+                                                    <div class="score-text">{score_text}</div>
                                                 </div>
                                             </div>
 
-                                            <p style="margin-top:0.5rem;color:#374151">{rec.get('description','')}</p>
+                                            <div class="desc">{rec.get('description','')}</div>
 
-                                            <div style="margin-bottom: 1rem;">
-                                                <span class="test-type-badge duration-badge">
-                                                    ⏱️ {rec.get('duration', '')} min
-                                                </span>
-                                                <span class="test-type-badge adaptive-badge">
-                                                    🔄 {rec.get('adaptive_support', '')}
-                                                </span>
-                                                <span class="test-type-badge remote-badge">
-                                                    🌐 {rec.get('remote_support', '')}
-                                                </span>
+                                            <div class="meta">
+                                                <span class="chip">⏱ {rec.get('duration','')} min</span>
+                                                <span class="chip">🔄 {rec.get('adaptive_support','')}</span>
+                                                <span class="chip">🌐 {rec.get('remote_support','')}</span>
                                             </div>
 
-                                            <strong>Test Types:</strong><br>
-                                            {', '.join(types)}<br><br>
+                                            <div style="margin-top:0.5rem;color:#64748b;font-size:0.9rem;">{', '.join(types)}</div>
 
-                                            <a href="{rec.get('url','')}" target="_blank"
-                                               style="background-color:#3B82F6;color:white;
-                                                      padding:0.5rem 1rem;border-radius:5px;
-                                                      text-decoration:none;">
-                                                View Assessment →
-                                            </a>
+                                            <div class="actions" style="margin-top:0.75rem;">
+                                                <a href="{rec.get('url','')}" target="_blank" class="btn">View Assessment →</a>
+                                            </div>
 
                                             <div style="color:#9CA3AF;margin-top:0.5rem;font-size:0.9rem;">Low relevance — try a more detailed query.</div>
                                         </div>
@@ -384,8 +381,8 @@ if st.button("🚀 Get Recommendations", type="primary", use_container_width=Tru
 st.markdown("---")
 st.markdown(
     """
-    <div style="text-align: center; color: #6B7280;">
-        <p>Built with ❤️ using RAG (TF-IDF baseline); FAISS & Gemini are optional</p>
+    <div class="footer">
+        <p>Built using RAG (TF-IDF baseline); FAISS & Gemini are optional</p>
         <p>This is a demo system. Add validation & security for production use.</p>
     </div>
     """,
