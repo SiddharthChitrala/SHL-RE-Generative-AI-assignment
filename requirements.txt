@@ -1,8 +1,6 @@
 # SHL Assessment System - Render-Compatible
-# Use a pandas release compatible with the Python version on the build host.
-# Allow pip to choose a compatible pandas wheel to avoid compiling from source.
-pandas>=2.2.3
-numpy~=1.24.0
+pandas==2.1.4
+numpy>=1.25.0
 scikit-learn==1.3.2
 faiss-cpu>=1.13.1
 fastapi==0.104.1
