@@ -195,3 +195,8 @@ Make sure the CSV matches the exact format required by the assignment pipeline.
 - `extract_pdf_text.py` — helper to extract the assignment PDF text
 
 ---
+# Test 1: API Health Check
+curl https://shl-re-generative-ai-assignment.onrender.com/health
+
+# Test 2: Frontend Loading
+# Visit in browser: https://shl-re-generative-ai-assignment-5a6qn3stbsjntc2h7ib2af.streamlit.app/
